@@ -24,9 +24,6 @@
 #warning You do not currently have FTC mode active on your compiler
 #endif
 
-#if firmwareVersion < 0 // TODO: change 0 to latest firmware verison
-#warning You do not currently have the latest firmware
-#endif
 
 #define PREPROCESSOR_CHECKS_EXECUTED
 // You can use this to only run your program if the checks have gon through
