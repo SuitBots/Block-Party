@@ -15,12 +15,22 @@
 //
 
 bool EncoderValReached(long MaxVal, tMotor motor) {
-  int threshold = MaxVal + 100; //TODO: adjust constant
-  if (nMotorEncoder[motor] >= MaxVal
-      && nMotorEncoder[motor] < MaxVal + threshold) {
-    return true;
+  if (MaxVal >= 0) {
+    int threshold = MaxVal + 100; //TODO: adjust constant
+    if (nMotorEncoder[motor] >= MaxVal
+	&& nMotorEncoder[motor] < MaxVal + threshold) {
+      return true;
+    }
+    return false;
   }
-  return false;
+  else {
+    int threshold = MaxVal - 100; //TODO: adjust constant
+    if (nMotorEncoder[motor] <= MaxVal
+	&& nMotorEncoder[motor] > MaxVal + threshold) {
+      return true;
+    }
+    return false;
+  }
 }
 
 void GoToEncoderVal(long EncoderVal, tMotor motor) {
@@ -61,17 +71,17 @@ void move(int distanceCM, tMotor *DriveMotors, size_t numMotors) {
   GoToEncoderVal(DriveMotors[1], encoderVal);
 }
 
-void vect_move(vect vector, tMotor *DriveMotors, size_t numMotors) {
+void vector_move(vect vector, tMotor *DriveMotors, size_t numMotors) {
   if (numMotors != 2) {
     writeDebugStream('Error: there must be exactly two motors for drive function');
     return;
   }
-  long mag2cm_scale = 0; //TODO: adjust
+  long Magnitude2CMScale = 0; //TODO: adjust
   rotate(*DriveMotors, directionXZ(vector), numMotors);
   move(*DriveMotors, mult(mag2cm_scale, magnitude(vector));
 }
 
-void omnimove(int distanceCM, tMotor *DriveMotors, size_t numMotors, direction_t direction) {
+void omnimove(int distanceCM, direction_t direction, tMotor *DriveMotors, size_t numMotors) {
   if (numMotors != 4) {
     writeDebugStream('Error: there must be exactly four motors for drive function');
     return;

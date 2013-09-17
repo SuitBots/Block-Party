@@ -74,11 +74,3 @@ void smart_omni_drive(tMotor *DriveMotors, size_t numMotors) {
   int joystickAngle = atan(J1Y2() / J1X2());
   move_in_direction(joystickAngle - compassBearing());
 }
-
-void mecanum_drive (tMotor *DriveMotors, size_t numMotors) {
-  // TODO
-}
-
-void smart_mecanum_drive (tMotor *DriveMotors, size_t numMotors) {
-  // TODO
-}
