@@ -3,13 +3,14 @@
 #pragma config(Motor,  mtr_S1_C1_2,     DriveR,            tmotorTetrix, openLoop, reversed, encoder)
 
 #include "TeleOp_functions.h"
+#include "JoystickDriver.c"
 
 const tMotor DriveMotors[] = { DriveL, DriveR };
 
 task main() {
   waitForStart();
   while (true) {
-    arcade_drive(DriveMotors[], 2);
+    arcade_drive(DriveMotors);
     getJoystickSettings(joystick);
   }
 }
