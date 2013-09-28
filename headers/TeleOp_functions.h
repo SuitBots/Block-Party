@@ -16,6 +16,12 @@
 
 #include "JoystickDriver.c"
 
+int limitJoy(int joystick) {
+	if (abs(joystick) < 10) {
+		return 0;
+	} else return joystick;
+}
+
 int J1X1()  { return joystick.joy1_x1; }       // These lines make pretty variables for the joysticks
 int J1X2()  { return joystick.joy1_x2; }       // J is which logitech controller is being used
 int J1Y1()  { return joystick.joy1_y1; }       // X or Y is the axis on which the compiler will read values
@@ -41,6 +47,16 @@ void arcade_drive(tMotor *DriveMotors, int size) {
   	motor[DriveMotors[3]] = J1Y2() - J1X2();
   	motor[DriveMotors[4]] = J1Y2() + J1X2();
 	}
+}
+
+void operate_flag_claw(tMotor flag) {
+	if (joy1Btn(7)) {
+		motor[flag] = 100;
+	}
+	else if (joy1Btn(8)) {
+		motor[flag] = -100;
+  }
+  else motor[flag] = 0;
 }
 
 
