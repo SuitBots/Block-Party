@@ -62,12 +62,12 @@ void operate_flag_claw(tMotor flag) {
 
 
 // for an omniwheel drive train
-//void omni_drive(tMotor *DriveMotors) {
-//  DriveMotors[0] = J1Y2() - J1X2() + J1X1();
-//  DriveMotors[1] = J1Y2() + J1X2() - J1X1();
-//  DriveMotors[2] = J1Y2() - J1X2() - J1X1();
-//  DriveMotors[3] = J1Y2() + J1X2() + J1X1();
-//}
+void omni_drive(tMotor *DriveMotors) {
+  motor[DriveMotors[0]] = J1Y2() + J1X1() - J1X2();
+  motor[DriveMotors[1]] = J1Y2() - J1X1() + J1X2();
+  motor[DriveMotors[2]] = J1Y2() + J1X1() + J1X2();
+  motor[DriveMotors[3]] = J1Y2() - J1X1() - J1X2();
+}
 
 //int compassBearing() { return 0; } // TODO: figure out a rotation sensor
 
