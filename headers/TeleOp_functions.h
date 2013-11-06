@@ -52,9 +52,11 @@ void arcade_drive(tMotor *DriveMotors, int size) {
 void operate_flag_claw(tMotor flag) {
 	if (joy1Btn(7)) {
 		motor[flag] = 100;
+		wait1Msec(1);
 	}
 	else if (joy1Btn(8)) {
 		motor[flag] = -100;
+		wait1Msec(1);
   }
   else motor[flag] = 0;
 }
