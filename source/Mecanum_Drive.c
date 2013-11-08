@@ -16,7 +16,7 @@ const tMotor DriveMotors[] = { DriveFL, DriveFR, DriveBL, DriveBR };
 
 task main()
 {
-	waitForStart();   // wait for start of tele-op phase
+	waitForStart();
 	while (true)
 	{
 		omni_drive(DriveMotors);

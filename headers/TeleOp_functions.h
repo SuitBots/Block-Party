@@ -15,6 +15,12 @@
 //
 
 #include "JoystickDriver.c"
+#include "hitechnic-gyro.h"
+
+
+void initializeRobot(tSensors gyro) {
+	HTGYROstartCal(gyro);
+}
 
 int limitJoy(int joystick) {
 	if (abs(joystick) < 10) {
@@ -22,14 +28,14 @@ int limitJoy(int joystick) {
 	} else return joystick;
 }
 
-int J1X1()  { return joystick.joy1_x1; }       // These lines make pretty variables for the joysticks
-int J1X2()  { return joystick.joy1_x2; }       // J is which logitech controller is being used
-int J1Y1()  { return joystick.joy1_y1; }       // X or Y is the axis on which the compiler will read values
-int J1Y2()  { return joystick.joy1_y2; }       // 1 or 2 is which joystick values will be read from
-int J2X1()  { return joystick.joy2_x1; }
-int J2X2()  { return joystick.joy2_x2; }
-int J2Y1()  { return joystick.joy2_y1; }
-int J2Y2()  { return joystick.joy2_y2; }
+int J1X1()  { return limitJoy(joystick.joy1_x1); }       // These lines make pretty variables for the joysticks
+int J1X2()  { return limitJoy(joystick.joy1_x2); }       // J is which logitech controller is being used
+int J1Y1()  { return limitJoy(joystick.joy1_y1); }       // X or Y is the axis on which the compiler will read values
+int J1Y2()  { return limitJoy(joystick.joy1_y2); }       // 1 or 2 is which joystick values will be read from
+int J2X1()  { return limitJoy(joystick.joy2_x1); }
+int J2X2()  { return limitJoy(joystick.joy2_x2); }
+int J2Y1()  { return limitJoy(joystick.joy2_y1); }
+int J2Y2()  { return limitJoy(joystick.joy2_y2); }
 
 void tank_drive(tMotor *DriveMotors) {
   motor[DriveMotors[0]] = J1Y1();
@@ -71,24 +77,38 @@ void omni_drive(tMotor *DriveMotors) {
   motor[DriveMotors[3]] = J1Y2() - J1X1() - J1X2();
 }
 
-//int compassBearing() { return 0; } // TODO: figure out a rotation sensor
+static float compassBearing(long time, tSensors gyro) {
+	float rotSpeed = HTGYROreadRot(gyro);
+	static float heading = rotSpeed * time;
+	return heading;
+}
 
-//void omnimove_in_direction(int angle) {
-//  float xval = MAX_JOY_VAL * cos(angle);
-//  float yval = MAX_JOY_VAL * sin(angle);
-
-//  motor[DriveFR] = yval - xval + J1X1();
-//  motor[DriveFL] = yval + xval - J1X1();
-//  motor{DriveBL] = yval - xval - J1X1();
-//  motor{DriveBR] = yval + xval + J1X1();
+//void calibrate_heading() {
+//	compassBearing() = 0;
 //}
 
-//void smart_omni_drive(tMotor *DriveMotors, size_t numMotors) {
-//  // smart means you can passivly rotate and go forward at the same time
-//  if (numMotors != 4) {
-//    writeDebugStream('Error: there must be exactly four motors for drive function');
-//    return;
-//  }
-//  int joystickAngle = atan(J1Y2() / J1X2());
-//  move_in_direction(joystickAngle - compassBearing());
-//}
+const int MAX_JOY_VAL = 255;
+
+void omnimove_in_direction(int angle, tMotor *DriveMotors) {
+  float xval = MAX_JOY_VAL * cos(angle);
+  float yval = MAX_JOY_VAL * sin(angle);
+
+  motor[DriveMotors[0]] = yval - xval + J1X1();
+  motor[DriveMotors[1]] = yval + xval - J1X1();
+  motor[DriveMotors[2]] = yval - xval - J1X1();
+  motor[DriveMotors[3]] = yval + xval + J1X1();
+}
+
+void smart_omni_drive(tMotor *DriveMotors, tSensors gyro) {
+  // smart means you can passivly rotate and go forward at the same time
+	int joystickAngle;
+
+	long time = time1[T1];
+
+	if (J1X2() > 0) {
+  	joystickAngle = atan(J1Y2() / J1X2());
+  } else {
+  	joystickAngle = atan(J1Y2() / J1X2()) + 180;
+  }
+  omnimove_in_direction(joystickAngle - compassBearing(time, gyro), DriveMotors);
+}
