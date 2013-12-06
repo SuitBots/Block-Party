@@ -98,10 +98,10 @@ void operate_arm_hand(TServoIndex hand, TServoIndex hand2) {
 
 	// for an omniwheel drive train
 	void omni_drive(tMotor *DriveMotors) {
-		motor[DriveMotors[0]] = -J1Y1() + J1X2() + J1X1();
-		motor[DriveMotors[1]] = -J1Y1() - J1X2() - J1X1();
-		motor[DriveMotors[2]] = -J1Y1() + J1X2() - J1X1();
-		motor[DriveMotors[3]] = -J1Y1() - J1X2() + J1X1();
+		motor[DriveMotors[0]] = -J1Y1() + (J1X1()/2) + J1X2();
+		motor[DriveMotors[1]] = -J1Y1() - (J1X1()/2) - J1X2();
+		motor[DriveMotors[2]] = -J1Y1() + (J1X1()/2) - J1X2();
+		motor[DriveMotors[3]] = -J1Y1() - (J1X1()/2) + J1X2();
 	}
 
 	static float compassBearing(long time, tSensors gyro) {
