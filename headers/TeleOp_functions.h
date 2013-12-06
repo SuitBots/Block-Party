@@ -14,8 +14,7 @@
 // tMotor DriveMotors[] = { DriveFL, DriveFR, DriveBL, DriveBR };
 //
 
-#include "JoystickDriver.c"
-#include "hitechnic-gyro.h"
+#include "Sample Programs\NXT\3rd Party Sensor Drivers\drivers\hitechnic-gyro.h"
 
 
 void initializeRobot(tSensors gyro) {
@@ -38,77 +37,105 @@ int J2Y1()  { return limitJoy(joystick.joy2_y1); }
 int J2Y2()  { return limitJoy(joystick.joy2_y2); }
 
 void tank_drive(tMotor *DriveMotors) {
-  motor[DriveMotors[0]] = J1Y1();
-  motor[DriveMotors[1]] = J1Y2();
+	motor[DriveMotors[0]] = J1Y1();
+	motor[DriveMotors[1]] = J1Y2();
 }
 
 void arcade_drive(tMotor *DriveMotors, int size) {
 	if (size == 2) {
-  	motor[DriveMotors[0]] = J1Y2() - J1X2();
-  	motor[DriveMotors[1]] = J1Y2() + J1X2();
+		motor[DriveMotors[0]] = J1Y2() - J1X2();
+		motor[DriveMotors[1]] = J1Y2() + J1X2();
 	}
 	if (size == 4) {
 		motor[DriveMotors[0]] = J1Y2() - J1X2();
-  	motor[DriveMotors[1]] = J1Y2() + J1X2();
-  	motor[DriveMotors[3]] = J1Y2() - J1X2();
-  	motor[DriveMotors[4]] = J1Y2() + J1X2();
+		motor[DriveMotors[1]] = J1Y2() + J1X2();
+		motor[DriveMotors[3]] = J1Y2() - J1X2();
+		motor[DriveMotors[4]] = J1Y2() + J1X2();
 	}
 }
 
 void operate_flag_claw(tMotor flag) {
-	if (joy1Btn(7)) {
+	if (joy2Btn(5)) {
 		motor[flag] = 100;
 		wait1Msec(1);
 	}
-	else if (joy1Btn(8)) {
+	else if (joy2Btn(7)) {
 		motor[flag] = -100;
 		wait1Msec(1);
-  }
-  else motor[flag] = 0;
+	}
+	else motor[flag] = 0;
+}
+
+void operate_arm_motor(tMotor Arm) {
+	if (abs(J2Y1()) > 0) {
+		motor[Arm] = J2Y1()/3;
+		wait1Msec(1);
+	}
+	else {
+		motor[Arm] = 0;
+	}
+}
+
+void operate_arm_hand(TServoIndex hand, TServoIndex hand2) {
+
+	if (joy2Btn(6)) {
+		servo[hand] = ServoValue[hand]-2;
+		servo[hand2] = 180-ServoValue[hand];
+		wait1Msec(1);
+	}
+	else if (joy2Btn(8)) {
+		servo[hand] = ServoValue[hand]+2;
+		servo[hand2] = 180-ServoValue[hand];
+		wait1Msec(1);
+	}
+	else {
+		servo[hand] = ServoValue[hand];
+		servo[hand2] = 180 - ServoValue[hand];
+	}
 }
 
 
 
-// for an omniwheel drive train
-void omni_drive(tMotor *DriveMotors) {
-  motor[DriveMotors[0]] = J1Y2() + J1X1() - J1X2();
-  motor[DriveMotors[1]] = J1Y2() - J1X1() + J1X2();
-  motor[DriveMotors[2]] = J1Y2() + J1X1() + J1X2();
-  motor[DriveMotors[3]] = J1Y2() - J1X1() - J1X2();
-}
+	// for an omniwheel drive train
+	void omni_drive(tMotor *DriveMotors) {
+		motor[DriveMotors[0]] = -J1Y1() + J1X2() + J1X1();
+		motor[DriveMotors[1]] = -J1Y1() - J1X2() - J1X1();
+		motor[DriveMotors[2]] = -J1Y1() + J1X2() - J1X1();
+		motor[DriveMotors[3]] = -J1Y1() - J1X2() + J1X1();
+	}
 
-static float compassBearing(long time, tSensors gyro) {
-	float rotSpeed = HTGYROreadRot(gyro);
-	static float heading = rotSpeed * time;
-	return heading;
-}
+	static float compassBearing(long time, tSensors gyro) {
+		float rotSpeed = HTGYROreadRot(gyro);
+		static float heading = rotSpeed * time;
+		return heading;
+	}
 
-//void calibrate_heading() {
-//	compassBearing() = 0;
-//}
+	//void calibrate_heading() {
+	//	compassBearing() = 0;
+	//}
 
-const int MAX_JOY_VAL = 255;
+	const int MAX_JOY_VAL = 255;
 
-void omnimove_in_direction(int angle, tMotor *DriveMotors) {
-  float xval = MAX_JOY_VAL * cos(angle);
-  float yval = MAX_JOY_VAL * sin(angle);
+	void omnimove_in_direction(int angle, tMotor *DriveMotors) {
+		float xval = MAX_JOY_VAL * cos(angle);
+		float yval = MAX_JOY_VAL * sin(angle);
 
-  motor[DriveMotors[0]] = yval - xval + J1X1();
-  motor[DriveMotors[1]] = yval + xval - J1X1();
-  motor[DriveMotors[2]] = yval - xval - J1X1();
-  motor[DriveMotors[3]] = yval + xval + J1X1();
-}
+		motor[DriveMotors[0]] = yval - xval + J1X2();
+		motor[DriveMotors[1]] = yval + xval - J1X2();
+		motor[DriveMotors[2]] = yval - xval - J1X2();
+		motor[DriveMotors[3]] = yval + xval + J1X2();
+	}
 
-void smart_omni_drive(tMotor *DriveMotors, tSensors gyro) {
-  // smart means you can passivly rotate and go forward at the same time
-	int joystickAngle;
+	void smart_omni_drive(tMotor *DriveMotors, tSensors gyro) {
+		// smart means you can passivly rotate and go forward at the same time
+		int joystickAngle;
 
-	long time = time1[T1];
+		long time = time1[T1];
 
-	if (J1X2() > 0) {
-  	joystickAngle = atan(J1Y2() / J1X2());
-  } else {
-  	joystickAngle = atan(J1Y2() / J1X2()) + 180;
-  }
-  omnimove_in_direction(joystickAngle - compassBearing(time, gyro), DriveMotors);
-}
+		if (J1X2() > 0) {
+			joystickAngle = atan(J1Y2() / J1X2());
+			} else {
+			joystickAngle = atan(J1Y2() / J1X2()) + 180;
+		}
+		omnimove_in_direction(joystickAngle - compassBearing(time, gyro), DriveMotors);
+	}
