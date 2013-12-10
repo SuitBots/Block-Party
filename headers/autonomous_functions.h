@@ -1,5 +1,5 @@
 //
-// basic_functions.h
+// autonomous_functions.h
 //
 // Copyright (c) 2013 Suit Bots FTC Team 4628
 //
@@ -14,160 +14,212 @@
 // tMotor DriveMotors[] = { DriveFL, DriveFR, DriveBL, DriveBR };
 //
 
+#include "Sample Programs\NXT\3rd Party Sensor Drivers\drivers\hitechnic-irseeker-v2.h"
+#include "AdvancedSensors.c"
+#include "Sample Programs\NXT\3rd Party Sensor Drivers\drivers\lego-ultrasound.h"
+//#include "typedefs.h"
+//#include "vector.h"
+
 bool EncoderValReached(long MaxVal, tMotor motor) {
-  if (MaxVal >= 0) {
-    int threshold = MaxVal + 100; //TODO: adjust constant
-    if (nMotorEncoder[motor] >= MaxVal
-	&& nMotorEncoder[motor] < MaxVal + threshold) {
-      return true;
-    }
-    return false;
-  }
-  else {
-    int threshold = MaxVal - 100; //TODO: adjust constant
-    if (nMotorEncoder[motor] <= MaxVal
-	&& nMotorEncoder[motor] > MaxVal + threshold) {
-      return true;
-    }
-    return false;
-  }
+	if (MaxVal >= 0) {
+		int threshold = MaxVal + 100; //TODO: adjust constant
+		if (nMotorEncoder[motor] >= MaxVal
+			&& nMotorEncoder[motor] < MaxVal + threshold) {
+			return true;
+		}
+		return false;
+	}
+	else {
+		int threshold = MaxVal - 100; //TODO: adjust constant
+		if (nMotorEncoder[motor] <= MaxVal
+			&& nMotorEncoder[motor] > MaxVal + threshold) {
+			return true;
+		}
+		return false;
+	}
 }
 
-void GoToEncoderVal(long EncoderVal, tMotor motor) {
-  while (! EncoderValReached(motor, EncoderVal)) {
-    motor[motor] = 100;
-  }
-  motor[motor] = 0;
-  nMotorEncoder[motor] = 0;
+void GoToEncoderVal(long EncoderVal, tMotor amotor) {
+	while (! EncoderValReached(EncoderVal, amotor)) {
+		motor[amotor] = 100;
+	}
+	motor[amotor] = 0;
+	nMotorEncoder[amotor] = 0;
+}
+
+void GoToEncoderVal_omni(long EncoderVal,int angle, tMotor *DriveMotors) {
+	float xval = MAX_JOY_VAL * cos(angle);
+	float yval = MAX_JOY_VAL * sin(angle);
+
+	while (! EncoderValReached(EncoderVal, DriveMotors[0])) {
+		motor[DriveMotors[0]] = yval - xval + J1X1();
+	}
+	motor[DriveMotors[0]] = 0;
+	nMotorEncoder[DriveMotors[0]] = 0;
+
+	while (! EncoderValReached(EncoderVal, DriveMotors[1])) {
+		motor[DriveMotors[1]] = yval + xval - J1X1();
+	}
+	motor[DriveMotors[1]] = 0;
+	nMotorEncoder[DriveMotors[1]] = 0;
+
+	while (! EncoderValReached(EncoderVal, DriveMotors[2])) {
+		motor[DriveMotors[2]] = yval - xval - J1X1();
+	}
+	motor[DriveMotors[2]] = 0;
+	nMotorEncoder[DriveMotors[2]] = 0;
+
+	while (! EncoderValReached(EncoderVal, DriveMotors[3])) {
+		motor[DriveMotors[3]] = yval + xval + J1X1();
+	}
+	motor[DriveMotors[3]] = 0;
+	nMotorEncoder[DriveMotors[3]] = 0;
+}
+
+void omnimove_for_length_time(int timeMS, const tMotor *DriveMotors) {
+	motor[DriveMotors[0]] = -30;
+	motor[DriveMotors[1]] = -100;
+	motor[DriveMotors[2]] = -30;
+	motor[DriveMotors[3]] = -100;
+	wait1Msec(timeMS);
+	motor[DriveMotors[0]] = 0;
+	motor[DriveMotors[1]] = 0;
+	motor[DriveMotors[2]] = 0;
+	motor[DriveMotors[3]] = 0;
 }
 
 const int FRICTION = 0; //TODO: adjust
 
-void rotate(int degrees, tMotor *DriveMotors, size_t numMotors) {
-  if (numMotors != 2) {
-    writeDebugStream('Error: there must be exactly two motors for drive function');
-    return;
-  }
-  const float scale_factor = 0; //TODO: adjust
-  long encoderVal = degrees * scale_factor * FRICTION;
-  if (degrees >= 0) {
-    GoToEncoderVal(DriveMotors[0], -encoderVal);
-    GoToEncoderVal(DriveMotors[1], encoderVal);
-  }
-  else {
-    GoToEncoderVal(DriveMotors[0], encoderVal);
-    GoToEncoderVal(DriveMotors[1], -encoderVal);
-  }
+void rotate(int degrees, tMotor *DriveMotors) {
+	const float scale_factor = 0; //TODO: adjust
+	long encoderVal = degrees * scale_factor * FRICTION;
+	if (degrees >= 0) {
+		GoToEncoderVal(DriveMotors[0], -encoderVal);
+		GoToEncoderVal(DriveMotors[1], encoderVal);
+	}
+	else {
+		GoToEncoderVal(DriveMotors[0], encoderVal);
+		GoToEncoderVal(DriveMotors[1], -encoderVal);
+	}
 }
 
-void move(int distanceCM, tMotor *DriveMotors, size_t numMotors) {
-  if (numMotors != 2) {
-    writeDebugStream('Error: there must be exactly two motors for drive function');
-    return;
-  }
-  const float scale_factor = 0; //TODO: adjust
-  long encoderVal = distanceCM * scale_factor * FRICTION;
-  GoToEncoderVal(DriveMotors[0], encoderVal);
-  GoToEncoderVal(DriveMotors[1], encoderVal);
+void move(int distanceCM, tMotor *DriveMotors) {
+	const float scale_factor = 0; //TODO: adjust
+	long encoderVal = distanceCM * scale_factor * FRICTION;
+	GoToEncoderVal(DriveMotors[0], encoderVal);
+	GoToEncoderVal(DriveMotors[1], encoderVal);
 }
 
-void vector_move(vect vector, tMotor *DriveMotors, size_t numMotors) {
-  if (numMotors != 2) {
-    writeDebugStream('Error: there must be exactly two motors for drive function');
-    return;
-  }
-  long Magnitude2CMScale = 0; //TODO: adjust
-  rotate(*DriveMotors, directionXZ(vector), numMotors);
-  move(*DriveMotors, mult(mag2cm_scale, magnitude(vector));
-}
+//void vector_move(vect vector, tMotor *DriveMotors) {
+//  long Magnitude2CMScale = 0; //TODO: adjust
+//  rotate(*DriveMotors, directionXZ(vector), numMotors);
+//  move(*DriveMotors, mult(mag2cm_scale, magnitude(vector));
+//}
 
-void omnimove(int distanceCM, direction_t direction, tMotor *DriveMotors, size_t numMotors) {
-  if (numMotors != 4) {
-    writeDebugStream('Error: there must be exactly four motors for drive function');
-    return;
-  }
-  const float scale_factor = 0; //TODO: adjust
-  long encoderVal = distanceCM * scale_factor * FRICTION;
-  switch (direction) {
-  case FORWARD:
-    encoderVal *= -1;
-  case BACKWARD:
-    GoToEncoderVal(DriveMotors[0], -encoderVal);
-    GoToEncoderVal(DriveMotors[1], -encoderVal);
-    GoToEncoderVal(DriveMotors[2], -encoderVal);
-    GoToEncoderVal(DriveMotors[3], -encoderVal);
-    break;
-  case LEFT:
-    encoderVal *= -1;
-  case RIGHT:
-    GoToEncoderVal(DriveMotors[0], encoderVal);
-    GoToEncoderVal(DriveMotors[1], -encoderVal);
-    GoToEncoderVal(DriveMotors[2], -encoderVal);
-    GoToEncoderVal(DriveMotors[3], encoderVal);
-    break;
-  }
-}
+//void omnimove(int distanceCM, direction_t direction, tMotor *DriveMotors) {
+//	const float scale_factor = 0; //TODO: adjust
+//	long encoderVal = distanceCM * scale_factor * FRICTION;
+//	switch (direction) {
+//	case FORWARD:
+//		encoderVal *= -1;
+//	case BACKWARD:
+//		GoToEncoderVal(DriveMotors[0], -encoderVal);
+//		GoToEncoderVal(DriveMotors[1], -encoderVal);
+//		GoToEncoderVal(DriveMotors[2], -encoderVal);
+//		GoToEncoderVal(DriveMotors[3], -encoderVal);
+//		break;
+//	case LEFT:
+//		encoderVal *= -1;
+//	case RIGHT:
+//		GoToEncoderVal(DriveMotors[0], encoderVal);
+//		GoToEncoderVal(DriveMotors[1], -encoderVal);
+//		GoToEncoderVal(DriveMotors[2], -encoderVal);
+//		GoToEncoderVal(DriveMotors[3], encoderVal);
+//		break;
+//	}
+//}
 
-void omnirotate(int degrees, tMotor *DriveMotors, size_t numMotors) {
-  if (numMotors != 4) {
-    writeDebugStream('Error: there must be exactly four motors for drive function');
-    return;
-  }
-  const float scale_factor = 0; //TODO: adjust
-  long encoderVal = degrees * scale_factor * FRICTION;
-  if (degrees >= 0) {
-    GoToEncoderVal(DriveMotors[0], -encoderVal);
-    GoToEncoderVal(DriveMotors[1], encoderVal);
-    GoToEncoderVal(DriveMotors[2], -encoderVal);
-    GoToEncoderVal(DriveMotors[3], encoderVal);
-  }
-  else {
-    GoToEncoderVal(DriveMotors[0], encoderVal);
-    GoToEncoderVal(DriveMotors[1], -encoderVal);
-    GoToEncoderVal(DriveMotors[2], encoderVal);
-    GoToEncoderVal(DriveMotors[3], -encoderVal);
-  }
+void omnirotate(int degrees, tMotor *DriveMotors) {
+	const float scale_factor = 0; //TODO: adjust
+	long encoderVal = degrees * scale_factor * FRICTION;
+	if (degrees >= 0) {
+		GoToEncoderVal(DriveMotors[0], -encoderVal);
+		GoToEncoderVal(DriveMotors[1], encoderVal);
+		GoToEncoderVal(DriveMotors[2], -encoderVal);
+		GoToEncoderVal(DriveMotors[3], encoderVal);
+	}
+	else {
+		GoToEncoderVal(DriveMotors[0], encoderVal);
+		GoToEncoderVal(DriveMotors[1], -encoderVal);
+		GoToEncoderVal(DriveMotors[2], encoderVal);
+		GoToEncoderVal(DriveMotors[3], -encoderVal);
+	}
 }
 
 int compassBearing() { return 0; } // TODO: figure out a rotation sensor
 
-void srotate(int degrees, tMotor *DriveMotors, size_t numMotors) {
-  if (numMotors != 2) {
-    writeDebugStream('Error: there must be exactly two motors for drive function');
-    return;
-  }
-  if (degrees >= 0) {
-    while (compassBearing() < degrees) {
-      motor[DriveMotors[0]] = -degrees;
-      motor[DriveMotors[1]] = degrees;
-    }
-  }
-  else {
-    while (compassBearing() > (360 + degrees)) {
-      ;
-    }
-  }
+void srotate(int degrees, tMotor *DriveMotors) {
+	if (degrees >= 0) {
+		while (compassBearing() < degrees) {
+			motor[DriveMotors[0]] = -degrees;
+			motor[DriveMotors[1]] = degrees;
+		}
+	}
+	else {
+		while (compassBearing() > (360 + degrees)) {
+			;
+		}
+	}
 }
 
-void somnirotate(int degrees, tMotor *DriveMotors, size_t numMotors) {
-  if (numMotors != 4) {
-    writeDebugStream('Error: there must be exactly four motors for drive function');
-    return;
-  }
-  if (degrees >= 0) {
-    while (compassBearing() < degrees) {
-      motor[DriveMotors[0]] = -encoderVal;
-      motor[DriveMotors[1]] = encoderVal;
-      motor[DriveMotors[2]] = -encoderVal;
-      motor[DriveMotors[3]] = encoderVal;
-    }
-  }
-  else {
-    while (compassBearing() > (360 + degrees)) {
-      motor[DriveMotors[0]] = encoderVal;
-      motor[DriveMotors[1]] = -encoderVal;
-      motor[DriveMotors[2]] = encoderVal;
-      motor[DriveMotors[3]] = -encoderVal;
-    }
-  }
+void somnirotate(int degrees, tMotor *DriveMotors) {
+	int scale_factor;
+	int encoderVal = degrees * scale_factor * FRICTION;
+	if (degrees >= 0) {
+		while (compassBearing() < degrees) {
+			motor[DriveMotors[0]] = -encoderVal;
+			motor[DriveMotors[1]] = encoderVal;
+			motor[DriveMotors[2]] = -encoderVal;
+			motor[DriveMotors[3]] = encoderVal;
+		}
+	}
+	else {
+		while (compassBearing() > (360 + degrees)) {
+			motor[DriveMotors[0]] = encoderVal;
+			motor[DriveMotors[1]] = -encoderVal;
+			motor[DriveMotors[2]] = encoderVal;
+			motor[DriveMotors[3]] = -encoderVal;
+		}
+	}
+}
+
+int IRSensorRegion (char sensorName, bool reversed) {  // include these commented lines when applied in the code
+	int _dirAC = 0;
+	//int acS1, acS2, acS3, acS4, acS5 = 0;
+	//int maxSig = 0;    // the max signal strength from the seeker.
+	//int val = 0;       // the translated directional value.
+
+	//tHTIRS2DSPMode _mode = DSP_1200;
+
+
+	// read the current modulated signal direction
+	_dirAC = HTIRS2readACDir(sensorName);
+	if (_dirAC < 0)
+	{
+		// error! - write to debug stream and then break.
+		writeDebugStreamLine("Read dir ERROR!");
+
+	}
+	if (reversed) {
+		_dirAC = _dirAC * -1 + 10;
+	}
+	return _dirAC;
+}
+
+void findIR(tSensors IR) {
+	if(IRSensorRegion(IR, false) == 5) {
+		servoTarget[cube] = 160;
+		wait1Msec(500);
+		servoTarget[cube] = 0;
+	}
 }

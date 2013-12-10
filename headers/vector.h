@@ -4,6 +4,8 @@
 // Copyright (c) 2013 Suit Bots 4628
 //
 
+#include "typedefs.h"
+
 long magnitude(vect vector) {
   long mag;
   mag += vector.x * vector.x + vector.y * vector.y + vector.z * vector.z;
@@ -13,7 +15,7 @@ long magnitude(vect vector) {
 
 int directionXY(vect vector) {
   int m = vector.y / vector.x;
-  if (vect.x < 0) 
+  if (vect.x < 0)
     m = atan(m) + 180;
   else if (m == nan && vect.y > 0)
     m = 90;
@@ -26,7 +28,7 @@ int directionXY(vect vector) {
 
 int directionXZ(vect vector) {
   int m = vector.z / vector.x;
-  if (vect.x < 0) 
+  if (vect.x < 0)
     m = atan(m) + 180;
   else if (m == nan && vect.z > 0)
     m = 90;
