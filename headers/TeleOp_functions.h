@@ -104,6 +104,27 @@ void operate_arm_hand(TServoIndex hand, TServoIndex hand2) {
 		motor[DriveMotors[3]] = -J1Y1() - (J1X1()/2) + J1X2();
 	}
 
+	void omni_drive_back(tMotor *DriveMotors) {
+		motor[DriveMotors[0]] = -J1Y1() - (J1X1()/2) + J1X2();
+		motor[DriveMotors[1]] = -J1Y1() + (J1X1()/2) - J1X2();
+		motor[DriveMotors[2]] = -J1Y1() - (J1X1()/2) - J1X2();
+		motor[DriveMotors[3]] = -J1Y1() + (J1X1()/2) + J1X2();
+	}
+
+	void omni_drive_left(tMotor *DriveMotors) {
+		motor[DriveMotors[0]] = -J1X2() + (J1X1()/2) - J1Y1();
+		motor[DriveMotors[1]] = -J1X2() - (J1X1()/2) + J1Y1();
+		motor[DriveMotors[2]] = -J1X2() + (J1X1()/2) + J1Y1();
+		motor[DriveMotors[3]] = -J1X2() - (J1X1()/2) - J1Y1();
+	}
+
+	void omni_drive_right(tMotor *DriveMotors) {
+		motor[DriveMotors[0]] = -J1X2() + (J1X1()/2) + J1Y1();
+		motor[DriveMotors[1]] = -J1X2() - (J1X1()/2) - J1Y1();
+		motor[DriveMotors[2]] = -J1X2() + (J1X1()/2) - J1Y1();
+		motor[DriveMotors[3]] = -J1X2() - (J1X1()/2) + J1Y1();
+	}
+
 	static float compassBearing(long time, tSensors gyro) {
 		float rotSpeed = HTGYROreadRot(gyro);
 		static float heading = rotSpeed * time;

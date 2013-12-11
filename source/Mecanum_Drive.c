@@ -21,6 +21,7 @@
 
 const tMotor DriveMotors[] = { DriveFL, DriveFR, DriveBL, DriveBR };
 int handPos = 0;
+int sideSelect = 3;
 
 void initializeRobot() {
 	servo[hand] = handPos;
@@ -34,9 +35,37 @@ task main()
 		waitForStart();
 	while (true)
 	{
-		omni_drive(DriveMotors);
+		getJoystickSettings(joystick);
+
+		omni_drive_left(DriveMotors);
 		operate_flag_claw(flag);
 
+		if(joy1Btn(03) == 1) {
+			sideSelect = 3;
+		}
+		else if(joy1Btn(02) == 1) {
+			sideSelect = 2;
+
+		}
+		else if(joy1Btn(00) == 1) {
+			sideSelect = 0;
+		}
+		else if(joy1Btn(01) == 1) {
+			sideSelect = 1;
+		}
+
+		if(sideSelect == 3) {
+			omni_drive(DriveMotors);
+		}
+		else if(sideSelect == 2) {
+			omni_drive_left(DriveMotors);
+		}
+		else if(sideSelect == 0) {
+			omni_drive_right(DriveMotors);
+		}
+		else if(sideSelect == 1) {
+			omni_drive_back(DriveMotors);
+		}
 
 	}
 }
