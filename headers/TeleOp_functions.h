@@ -68,7 +68,7 @@ void operate_flag_claw(tMotor flag) {
 
 void operate_arm_motor(tMotor Arm) {
 	if (abs(J2Y1()) > 0) {
-		motor[Arm] = J2Y1()/3;
+		motor[Arm] = J2Y1();
 		wait1Msec(1);
 	}
 	else {
@@ -76,87 +76,82 @@ void operate_arm_motor(tMotor Arm) {
 	}
 }
 
-void operate_arm_hand(TServoIndex hand, TServoIndex hand2) {
+void operate_arm_hand(TServoIndex hand) {
 
 	if (joy2Btn(6)) {
 		servo[hand] = ServoValue[hand]-2;
-		servo[hand2] = 180-ServoValue[hand];
 		wait1Msec(1);
 	}
 	else if (joy2Btn(8)) {
 		servo[hand] = ServoValue[hand]+2;
-		servo[hand2] = 180-ServoValue[hand];
 		wait1Msec(1);
 	}
 	else {
 		servo[hand] = ServoValue[hand];
-		servo[hand2] = 180 - ServoValue[hand];
 	}
 }
 
 
 
-	// for an omniwheel drive train
-	void omni_drive(tMotor *DriveMotors) {
-		motor[DriveMotors[0]] = -J1Y1() + (J1X1()/2) + J1X2();
-		motor[DriveMotors[1]] = -J1Y1() - (J1X1()/2) - J1X2();
-		motor[DriveMotors[2]] = -J1Y1() + (J1X1()/2) - J1X2();
-		motor[DriveMotors[3]] = -J1Y1() - (J1X1()/2) + J1X2();
-	}
+// for an omniwheel drive train
+void omni_drive(tMotor *DriveMotors) {
+	motor[DriveMotors[0]] = -J1Y1() + (J1X1()/2) - J1X2();
+	motor[DriveMotors[1]] = -J1Y1() - (J1X1()/2) + J1X2();
+	motor[DriveMotors[2]] = J1Y1() + (J1X1()/2) + J1X2();
+	motor[DriveMotors[3]] = J1Y1() - (J1X1()/2) - J1X2();
+}
 
-	void omni_drive_back(tMotor *DriveMotors) {
-		motor[DriveMotors[0]] = -J1Y1() - (J1X1()/2) + J1X2();
-		motor[DriveMotors[1]] = -J1Y1() + (J1X1()/2) - J1X2();
-		motor[DriveMotors[2]] = -J1Y1() - (J1X1()/2) - J1X2();
-		motor[DriveMotors[3]] = -J1Y1() + (J1X1()/2) + J1X2();
-	}
+static float compassBearing(long time, tSensors gyro) {
+	float rotSpeed = HTGYROreadRot(gyro);
+	static float heading = rotSpeed * time;
+	return heading;
+}
 
-	void omni_drive_left(tMotor *DriveMotors) {
-		motor[DriveMotors[0]] = -J1X2() + (J1X1()/2) - J1Y1();
-		motor[DriveMotors[1]] = -J1X2() - (J1X1()/2) + J1Y1();
-		motor[DriveMotors[2]] = -J1X2() + (J1X1()/2) + J1Y1();
-		motor[DriveMotors[3]] = -J1X2() - (J1X1()/2) - J1Y1();
-	}
+//void calibrate_heading() {
+//	compassBearing() = 0;
+//}
 
-	void omni_drive_right(tMotor *DriveMotors) {
-		motor[DriveMotors[0]] = -J1X2() + (J1X1()/2) + J1Y1();
-		motor[DriveMotors[1]] = -J1X2() - (J1X1()/2) - J1Y1();
-		motor[DriveMotors[2]] = -J1X2() + (J1X1()/2) - J1Y1();
-		motor[DriveMotors[3]] = -J1X2() - (J1X1()/2) + J1Y1();
-	}
+const int MAX_JOY_VAL = 255;
 
-	static float compassBearing(long time, tSensors gyro) {
-		float rotSpeed = HTGYROreadRot(gyro);
-		static float heading = rotSpeed * time;
-		return heading;
-	}
+void omnimove_in_direction(int angle, tMotor *DriveMotors, int rotJoy) {
 
-	//void calibrate_heading() {
-	//	compassBearing() = 0;
-	//}
+	float xval = MAX_JOY_VAL * sinDegrees(angle);
+	float yval = MAX_JOY_VAL * cosDegrees(angle);
 
-	const int MAX_JOY_VAL = 255;
+	motor[DriveMotors[0]] = -yval + (rotJoy/2) - xval;
+	motor[DriveMotors[1]] = -yval - (rotJoy/2) + xval;
+	motor[DriveMotors[2]] = yval + (rotJoy/2) + xval;
+	motor[DriveMotors[3]] = yval - (rotJoy/2) - xval;
+}
 
-	void omnimove_in_direction(int angle, tMotor *DriveMotors) {
-		float xval = MAX_JOY_VAL * cos(angle);
-		float yval = MAX_JOY_VAL * sin(angle);
+void smart_omni_drive(tMotor *DriveMotors, tSensors gyro) {
+	// smart means you can passivly rotate and go forward at the same time
+	int joystickAngle;
+	int angle;
 
-		motor[DriveMotors[0]] = yval - xval + J1X2();
-		motor[DriveMotors[1]] = yval + xval - J1X2();
-		motor[DriveMotors[2]] = yval - xval - J1X2();
-		motor[DriveMotors[3]] = yval + xval + J1X2();
-	}
+	long time = time1[T1];
 
-	void smart_omni_drive(tMotor *DriveMotors, tSensors gyro) {
-		// smart means you can passivly rotate and go forward at the same time
-		int joystickAngle;
+	if(abs(J1Y2()) > 20 || abs(J1X2()) > 20) {
+		joystickAngle = radiansToDegrees(atan(J1Y2() / J1X2()));
 
-		long time = time1[T1];
-
-		if (J1X2() > 0) {
-			joystickAngle = atan(J1Y2() / J1X2());
-			} else {
-			joystickAngle = atan(J1Y2() / J1X2()) + 180;
+		if (abs(J1X2()) > 20) {
+			if(J1X2() > 0) {
+				angle = -1 * (joystickAngle - 90);
+			}
+			else if(J1X2() < 0) {
+				angle = -1 * (joystickAngle + 90);
+			}
 		}
-		omnimove_in_direction(joystickAngle - compassBearing(time, gyro), DriveMotors);
+		omnimove_in_direction(angle /*- compassBearing(time, gyro)*/, DriveMotors, J1X1());
 	}
+
+
+	else {
+		motor[DriveMotors[0]] = 0;
+		motor[DriveMotors[1]] = 0;
+		motor[DriveMotors[2]] = 0;
+		motor[DriveMotors[3]] = 0;
+	}
+
+	writeDebugStreamLine("joystickAngle: %i  compassBearing: %f", joystickAngle, compassBearing(time, gyro));
+}
