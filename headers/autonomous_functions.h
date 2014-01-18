@@ -215,11 +215,3 @@ int IRSensorRegion (char sensorName, bool reversed) {  // include these commente
 	}
 	return _dirAC;
 }
-
-void findIR(tSensors IR) {
-	if(IRSensorRegion(IR, false) == 5) {
-		servoTarget[cube] = 160;
-		wait1Msec(500);
-		servoTarget[cube] = 0;
-	}
-}

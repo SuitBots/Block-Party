@@ -20,10 +20,11 @@
 
 #include "JoystickDriver.c"  //Include file to "handle" the Bluetooth messagesvalidateLongAddresvalidateLongAddresvalidateLongAddresvalidateLongAddress
 #include "TeleOp_functions.h"  // an H file that we wrote implementing various functions
+#include "autonomous_functions.h"	// an H file that we wrote implementing various functions
+#include "hitechnic-sensormux.h"
 
 
 const tMotor DriveMotors[] = { DriveFL, DriveBL, DriveFR, DriveBR };  //an array that describes the Drive motors
-const tMotor EGMotors[] = {EG1, EG2};
 
 
 void initializeRobot() {
@@ -33,16 +34,47 @@ void initializeRobot() {
 
 task main()
 {
+
 	initializeRobot();
-	waitForStart();
-	while (true)
-	{
-		getJoystickSettings(joystick);
+	//waitForStart(); // Wait for the beginning of autonomous phase.
 
-		operate_Lift(Lift);
-		operate_Spinny(spinny);
-		operate_FRM(FRM);
-		omni_drive(DriveMotors);
-
+	//check first bin
+	GoToEncoderVal_omni(2000, DriveMotors, 30);
+	if(IRSensorRegion(IR, false) > 5) {
+		motor[motorA] = 100;
+		servo[autoArm] = 30;
+		wait1Msec(1000);
+		servo[autoArm] = 255;
 	}
+
+	//check second bin
+/*	GoToEncoderVal_omni(8030, DriveMotors, 30);
+	if(IRSensorRegion(IR, false) > 5) {
+		motor[motorA] = 100;
+		servo[autoArm] = 30;
+		wait1Msec(1000);
+		servo[autoArm] = 255;
+	}
+
+	//check third bin
+	GoToEncoderVal_omni(8030, DriveMotors, 30);
+	if(IRSensorRegion(IR, false) > 5) {
+		motor[motorA] = 100;
+		servo[autoArm] = 30;
+		wait1Msec(1000);
+		servo[autoArm] = 255;
+	}
+
+	//check fourth bin
+	GoToEncoderVal_omni(8030, DriveMotors, 30);
+	if(IRSensorRegion(IR, false) > 5) {
+		motor[motorA] = 100;
+		servo[autoArm] = 30;
+		wait1Msec(1000);
+		servo[autoArm] = 255;
+	}
+
+	//get out of way
+	GoToEncoderVal_omni(8030, DriveMotors, 30);*/
+
 }

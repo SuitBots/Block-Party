@@ -54,40 +54,40 @@ void arcade_drive(tMotor *DriveMotors, int size) {
 	}
 }
 
-void operate_flag_claw(tMotor flag) {
+void operate_FRM(tMotor FRM) {
 	if (joy2Btn(5)) {
-		motor[flag] = 100;
+		motor[FRM] = 100;
 		wait1Msec(1);
 	}
 	else if (joy2Btn(7)) {
-		motor[flag] = -100;
+		motor[FRM] = -100;
 		wait1Msec(1);
 	}
-	else motor[flag] = 0;
+	else motor[FRM] = 0;
 }
 
-void operate_arm_motor(tMotor Arm) {
+void operate_Lift(tMotor Lift) {
 	if (abs(J2Y1()) > 0) {
-		motor[Arm] = J2Y1();
+		motor[Lift] = J2Y1();
 		wait1Msec(1);
 	}
 	else {
-		motor[Arm] = 0;
+		motor[Lift] = 0;
 	}
 }
 
-void operate_arm_hand(TServoIndex hand) {
+void operate_Spinny(TServoIndex spinny) {
 
 	if (joy2Btn(6)) {
-		servo[hand] = ServoValue[hand]-2;
+		servo[spinny] = 0;
 		wait1Msec(1);
 	}
 	else if (joy2Btn(8)) {
-		servo[hand] = ServoValue[hand]+2;
+		servo[spinny] = 255;
 		wait1Msec(1);
 	}
 	else {
-		servo[hand] = ServoValue[hand];
+		servo[spinny] = 127;
 	}
 }
 
@@ -95,10 +95,10 @@ void operate_arm_hand(TServoIndex hand) {
 
 // for an omniwheel drive train
 void omni_drive(tMotor *DriveMotors) {
-	motor[DriveMotors[0]] = -J1Y1() + (J1X1()/2) - J1X2();
-	motor[DriveMotors[1]] = -J1Y1() - (J1X1()/2) + J1X2();
+	motor[DriveMotors[0]] = J1Y1() - (J1X1()/2) - J1X2();
+	motor[DriveMotors[1]] = J1Y1() - (J1X1()/2) + J1X2();
 	motor[DriveMotors[2]] = J1Y1() + (J1X1()/2) + J1X2();
-	motor[DriveMotors[3]] = J1Y1() - (J1X1()/2) - J1X2();
+	motor[DriveMotors[3]] = J1Y1() + (J1X1()/2) - J1X2();
 }
 
 static float compassBearing(long time, tSensors gyro) {
