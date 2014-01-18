@@ -158,6 +158,7 @@ void omnirotate(int degrees, tMotor *DriveMotors) {
 
 int compassBearing() { return 0; } // TODO: figure out a rotation sensor
 
+// rotate in an "s"-like way. (What does this do?)
 void srotate(int degrees, tMotor *DriveMotors) {
 	if (degrees >= 0) {
 		while (compassBearing() < degrees) {
