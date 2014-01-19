@@ -32,7 +32,7 @@ void initializeRobot() {
 }
 
 
-float64 Heading ()       { return compassBearing (time1[T1], gyro); }
+float Heading ()       { return compassBearing (time1[T1], gyro); }
 int     IRSensorValue () { return IRSensorRegion (IR, false); }
 long    Time ()          { return time1[T1]; }
 int     AftDistance ()   { return SensorValue [AFT_SONOR]; }
@@ -70,7 +70,9 @@ float AverageTicksPerCM (float* buffer, int count)
   return sum / ((float) N);
 }
 
-void DriveToDistanceWithConversion (int heading,
+
+
+void DriveWithHeadingDistanceAndConversion (int heading,
                                     int distance,
                                     float ticks_per_cm)
 { while ((EncoderTicks () / ticks_per_cm) < distance)
@@ -111,9 +113,10 @@ float DriveToIROrFailsafe (float fwd_heading)
     { int traveled = AftDistance ();
       float current_ticks = EncoderTicks ();
       if (traveled < MAX_ULTRASONIC_CM)
-        ticks_buffer[ticks++ % TICKS_BUFFER_SIZE] = current_ticks / ((float) (traveled - travel_start));
-      else if (ticks_per_cm < 0)
-        ticks_per_cm = AverageTicksPerCM (ticks_per_cm_buffer, ticks);
+        ticks_buffer[ticks++ % TICKS_BUFFER_SIZE] =
+          current_ticks / ((float) (traveled - travel_start));
+
+      ticks_per_cm = AverageTicksPerCM (ticks_per_cm_buffer, ticks);
 
       if (DESIRED_IR_DIRECTION == IRSensorValue ())
         { stop = true;
@@ -156,11 +159,9 @@ const int TURNING_POINT_DISTANCE_CM = 300;
 // function ran. We're counting total distance from
 // the wall, so we'll need to know how far we've gone.
 void DriveToTurningPoint (float fwd_heading, float ticks_per_cm)
-{
-  while ((EncoderTicks () / ticks_per_cm) < TURNING_POINT_DISTANCE_CM)
-    { DriveAtHeading (fwd_heading);
-      wait10Msec (5);
-    }
+{ DriveWithHeadingDistanceAndConversion (fwd_heading,
+                                 TURNING_POINT_DISTANCE_CM,
+                                 ticks_per_cm);
   Stop ();
 }
 
@@ -180,29 +181,26 @@ const int ROBOT_BEHIND_US_THRESHOLD_CM = 50;
 // drive up on to the ramp itself.  
 void DriveUpOnRamp (float fwd_heading, float ticks_per_cm)
 { ZeroEncoders ();
-  const float64 left_ticks_per_cm = ticks_per_cm * FWD_TO_SIDEWAYS_CONVERSION;
-  while (DRIVE_LEFT_CM > (EncoderTicks () / left_ticks_per_cm))
-    { DriveAtHeading (fwd_heading + 90.0);
-      wait10Msec (5);
-    }
+  const float left_ticks_per_cm = ticks_per_cm * FWD_TO_SIDEWAYS_CONVERSION;
+  DriveWithHeadingDistanceAndConversion (fwd_heading + 90.0,
+                                         DRIVE_LEFT_CM,
+                                         left_ticks_per_cm);
+
   Stop ();
   ZeroEncoders ();
 
   // Loop behind us. Is there a robot there? If so: move over a bit more.
   if (ROBOT_BEHIND_US_THRESHOLD_CM > AftDistance ())
-    { while (DRIVE_LEFT_IF_BLOCKED_CM > (EncoderTicks () / left_ticks_per_cm))
-        { DriveAtHeading (fwd_heading + 90.0);
-          wait10Msec (5);
-        }
+    { DriveWithHeadingDistanceAndConversion (fwd_hedaing + 90.0,
+                                             DRIVE_LEFT_IF_BLOCKED_CM,
+                                             left_ticks_per_cm);
+      Stop ();
+      ZeroEncoders ();
     }
-  Stop ();
-  ZeroEncoders ();
 
-  while (DRIVE_UP_RAMP_CM > (EncoderTicks () / ticks_per_cm))
-    { DriveAtHeading (-fwd_heading);
-      wait10Msec (5);
-    }
-  
+  DriveWithHeadingDistanceAndConversion (- fwd_heading,
+                                         DRIVE_UP_RAMP_CM,
+                                         ticks_per_cm);
   Stop ();
 }
 
