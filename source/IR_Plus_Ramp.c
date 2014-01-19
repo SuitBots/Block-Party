@@ -28,21 +28,21 @@ const tMotor DriveMotors[] = { DriveFL, DriveBL, DriveFR, DriveBR };  //an array
 const int N_MOTORS = 4;
 
 void initializeRobot() {
-	servo[autoArm] = 255;
+  servo[autoArm] = 255;
 }
 
 
-float Heading ()       { return compassBearing (time1[T1], gyro); }
-int     IRSensorValue () { return IRSensorRegion (IR, false); }
-long    Time ()          { return time1[T1]; }
-int     AftDistance ()   { return SensorValue [AFT_SONOR]; }
-int     LeftDistance ()  { return SensorValue [LEFT_SONOR]; }
-void    ZeroEncoders ()
+long  Time ()          { return time1[T1]; }
+float Heading ()       { return compassBearing (Time (), gyro); }
+int   IRSensorValue () { return IRSensorRegion (IR, false); }
+int   AftDistance ()   { return SensorValue [AFT_SONOR]; }
+int   LeftDistance ()  { return SensorValue [LEFT_SONOR]; }
+void  ZeroEncoders ()
 { for (int i = 0; i < N_MOTORS; ++i)
     nMotorEncoder[DriveMotors[i]] = 0;
 }
 
-int     EncoderTicks ()
+int   EncoderTicks ()
 { int sum = 0;
   for (int i = 0; i < N_MOTORS; ++i)
     sum += nMotorEncoder[DriveMotors[i]];
@@ -52,7 +52,8 @@ int     EncoderTicks ()
 
 void DriveAtHeading (float heading)
 { float current = Heading ();
-  omnimove_in_direction (heading - current, DriveMotors, 0);
+  float off = heading - current;
+  omnimove_in_direction (heading + off, DriveMotors, 0);
 }
 
 void Stop ()
@@ -73,8 +74,8 @@ float AverageTicksPerCM (float* buffer, int count)
 
 
 void DriveWithHeadingDistanceAndConversion (int heading,
-                                    int distance,
-                                    float ticks_per_cm)
+                                            int distance,
+                                            float ticks_per_cm)
 { while ((EncoderTicks () / ticks_per_cm) < distance)
     { DriveAtHeading (heading);
       wait10Msec (5);
@@ -105,7 +106,7 @@ const int FAILSAFE_BUCKET_DISTANCE_AFT_CM = 200;
 float DriveToIROrFailsafe (float fwd_heading)
 { int travel_start = AftDistance ();
   float ticks_per_cm_buffer[TICKS_BUFFER_SIZE];
-  int ticks_per_cm = -1;
+  float ticks_per_cm = 1.0;
   int ticks = 0;
   ZeroEncoders ();
   bool stop = false;
