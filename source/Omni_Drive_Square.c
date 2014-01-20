@@ -27,9 +27,12 @@
 const tMotor DriveMotors[] = { DriveFL, DriveBL, DriveFR, DriveBR };  //an array that describes the Drive motors
 const int N_MOTORS = 4;
 
+static int orientation = 0;
+
 void initializeRobot()
 { ClearTimer (T1);
   servo[autoArm] = 255;
+  orientation = Heading ();
 }
 
 long  Time ()          { return time1[T1]; }
@@ -37,7 +40,7 @@ float Heading ()       { return compassBearing (Time (), gyro); }
 
 void DriveAtHeading (float heading)
 { float current = Heading ();
-  float off = heading - current;
+  float off = orientation - current;
   omnimove_in_direction (heading + off, DriveMotors, 0);
 }
 

@@ -27,9 +27,8 @@
 const tMotor DriveMotors[] = { DriveFL, DriveBL, DriveFR, DriveBR };  //an array that describes the Drive motors
 const int N_MOTORS = 4;
 
-void initializeRobot() {
-  servo[autoArm] = 255;
-}
+
+static float orientation = 0;
 
 
 long  Time ()          { return time1[T1]; }
@@ -49,10 +48,12 @@ int   EncoderTicks ()
   return sum;
 }
 
-
+// TODO: This won't *correct* for any misalignments so much as it
+// will accommodate for them. Add in some rotation to correct for
+// angular offset instead.
 void DriveAtHeading (float heading)
 { float current = Heading ();
-  float off = heading - current;
+  float off = orientation - current;
   omnimove_in_direction (heading + off, DriveMotors, 0);
 }
 
@@ -71,8 +72,6 @@ float AverageTicksPerCM (float* buffer, int count)
   return sum / ((float) N);
 }
 
-
-
 void DriveWithHeadingDistanceAndConversion (int heading,
                                             int distance,
                                             float ticks_per_cm)
@@ -80,6 +79,12 @@ void DriveWithHeadingDistanceAndConversion (int heading,
     { DriveAtHeading (heading);
       wait10Msec (5);
     }
+}
+
+void initializeRobot() {
+  servo[autoArm] = 255;
+  ClearTimer (T1);
+  orientation = Heading ();
 }
 
 // Per documentation, the ultrasonic sensor has a maximum
@@ -210,15 +215,13 @@ void DriveUpOnRamp (float fwd_heading, float ticks_per_cm)
 // block in it. If you don't see the IR beacon by the time you get
 // to the last basket, dump the block there just to be sure.
 void IRBlockAndRamp ()
-{ ClearTimer (T1);
-  float fwd_heading = Heading ();
+{ float fwd_heading = 0;
   
   float ticks_per_cm = DriveToIROrFailsafe (fwd_heading);
   nxtDisplayTextLine(1, "t/cm: %f", ticks_per_cm);
   DumpBlock ();
 
   ClearTimer (T1);
-  fwd_heading = Heading ();
 
   DriveToTurningPoint (fwd_heading, ticks_per_cm);
   DriveUpOnRamp (fwd_heading, ticks_per_cm);
