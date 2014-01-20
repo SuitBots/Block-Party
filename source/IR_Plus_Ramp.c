@@ -204,7 +204,7 @@ void DriveUpOnRamp (float fwd_heading, float ticks_per_cm)
       ZeroEncoders ();
     }
 
-  DriveWithHeadingDistanceAndConversion (- fwd_heading,
+  DriveWithHeadingDistanceAndConversion (fwd_heading + 180.0,
                                          DRIVE_UP_RAMP_CM,
                                          ticks_per_cm);
   Stop ();
