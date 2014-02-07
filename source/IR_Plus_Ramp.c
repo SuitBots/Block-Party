@@ -1,7 +1,7 @@
 #pragma config(Hubs,  S1, HTMotor,  HTMotor,  HTMotor,  HTMotor)
 #pragma config(Hubs,  S2, HTServo,  none,     none,     none)
-#pragma config(Sensor, S3,     gyro,           sensorI2CHiTechnicGyro)
-#pragma config(Sensor, S4,     IR,             sensorI2CCustom)
+#pragma config(Sensor, S3,     IR,             sensorI2CCustom)
+#pragma config(Sensor, S4,     HTSMUX,         sensorI2CCustom)
 #pragma config(Motor,  mtr_S1_C1_1,     DriveFL,       tmotorTetrix, openLoop, reversed, encoder)
 #pragma config(Motor,  mtr_S1_C1_2,     DriveBL,       tmotorTetrix, openLoop, reversed, encoder)
 #pragma config(Motor,  mtr_S1_C2_1,     DriveFR,       tmotorTetrix, openLoop, encoder)
@@ -22,7 +22,12 @@
 #include "TeleOp_functions.h"  // an H file that we wrote implementing various functions
 #include "autonomous_functions.h"	// an H file that we wrote implementing various functions
 #include "hitechnic-sensormux.h"
+#include "hitechnic-eopd.h"
 
+const tMUXSensor AFT_SONOR = msensor_S4_1;
+const tMUXSensor LEFT_SONOR = msensor_S4_2;
+//const tMUXSensor EOPD = msensor_S4_3;
+//const tMUXSensor gyro = msensor_S4_4;
 
 const tMotor DriveMotors[] = { DriveFL, DriveBL, DriveFR, DriveBR };  //an array that describes the Drive motors
 const int N_MOTORS = 4;
@@ -32,7 +37,7 @@ static float orientation = 0;
 
 
 long  Time ()          { return time1[T1]; }
-float Heading ()       { return compassBearing (Time (), gyro); }
+// float Heading ()       { return compassBearing (Time (), gyro); }
 int   IRSensorValue () { return IRSensorRegion (IR, false); }
 int   AftDistance ()   { return SensorValue [AFT_SONOR]; }
 int   LeftDistance ()  { return SensorValue [LEFT_SONOR]; }
@@ -52,9 +57,9 @@ int   EncoderTicks ()
 // will accommodate for them. Add in some rotation to correct for
 // angular offset instead.
 void DriveAtHeading (float heading)
-{ float current = Heading ();
-  float off = orientation - current;
-  omnimove_in_direction (heading + off, DriveMotors, 0);
+{ //float current = Heading ();
+  // float off = orientation - current;
+  omnimove_in_direction (heading, DriveMotors, 0);
 }
 
 void Stop ()
@@ -84,12 +89,12 @@ void DriveWithHeadingDistanceAndConversion (int heading,
 void initializeRobot() {
   servo[autoArm] = 255;
   ClearTimer (T1);
-  orientation = Heading ();
+  //orientation = Heading ();
 }
 
 // Per documentation, the ultrasonic sensor has a maximum
 // range of 2.5m, and return values >254 are "out of range"
-// errors. Adjust this to match 
+// errors. Adjust this to match
 const int MAX_ULTRASONIC_CM = 255;
 
 // TODO: Determine whether or not we want the IR beacon to be
@@ -101,16 +106,16 @@ const int DESIRED_IR_DIRECTION = 5;
 // TODO: Measure the distance from the end of the field
 //       to where I4 will have to be to dump a block
 //       in the last basket.
-const int FAILSAFE_BUCKET_DISTANCE_AFT_CM = 200;
+const int FAILSAFE_BUCKET_DISTANCE_AFT_CM = 162;
 
 // Drive until either you see the IR sensor or
-// you're at the last bucket. 
+// you're at the last bucket.
 //
 // BONUS: Return a best estimate of how many motor
 // encoder ticks it takes to go 1 cm.
 float DriveToIROrFailsafe (float fwd_heading)
 { int travel_start = AftDistance ();
-  float ticks_per_cm_buffer[TICKS_BUFFER_SIZE];
+  float ticks_buffer[TICKS_BUFFER_SIZE];
   float ticks_per_cm = 1.0;
   int ticks = 0;
   ZeroEncoders ();
@@ -122,7 +127,7 @@ float DriveToIROrFailsafe (float fwd_heading)
         ticks_buffer[ticks++ % TICKS_BUFFER_SIZE] =
           current_ticks / ((float) (traveled - travel_start));
 
-      ticks_per_cm = AverageTicksPerCM (ticks_per_cm_buffer, ticks);
+      ticks_per_cm = AverageTicksPerCM (ticks_buffer, ticks);
 
       if (DESIRED_IR_DIRECTION == IRSensorValue ())
         { stop = true;
@@ -131,11 +136,11 @@ float DriveToIROrFailsafe (float fwd_heading)
         { if (traveled > FAILSAFE_BUCKET_DISTANCE_AFT_CM)
             stop = true;
         }
-      else // We have to rely on ticks/cm 
+      else // We have to rely on ticks/cm
         { if ((current_ticks / ticks_per_cm) > FAILSAFE_BUCKET_DISTANCE_AFT_CM)
             stop = true;
         }
-      
+
       DriveAtHeading (fwd_heading);
 
       if (! stop)
@@ -154,7 +159,7 @@ void DumpBlock ()
 
 // TODO: Determine how far (in cm) I4 will have to have
 //       driven forward before it goes left.
-const int TURNING_POINT_DISTANCE_CM = 300;
+const int TURNING_POINT_DISTANCE_CM = 188;
 
 // After you've dumped the block in the basket,
 // continue driving until you're past the end
@@ -176,15 +181,16 @@ void DriveToTurningPoint (float fwd_heading, float ticks_per_cm)
 // straight sideways?  Use this to convert.
 // TODO: replace this with a more sensible sensor
 //       strategy.
-const float FWD_TO_SIDEWAYS_CONVERSION = 2.0;
+const float FWD_TO_SIDEWAYS_CONVERSION = 1.0;
 
-const int DRIVE_LEFT_INITIAL_CM = 100;
+// const int DRIVE_LEFT_INITIAL_CM = 100;
+const int DRIVE_LEFT_CM = 85;
 const int DRIVE_LEFT_IF_BLOCKED_CM = 50;
-const int DRIVE_UP_RAMP_CM = 150;
+const int DRIVE_UP_RAMP_CM = 100;
 const int ROBOT_BEHIND_US_THRESHOLD_CM = 50;
 
 // drive sideways to get lined up with the ramp, then
-// drive up on to the ramp itself.  
+// drive up on to the ramp itself.
 void DriveUpOnRamp (float fwd_heading, float ticks_per_cm)
 { ZeroEncoders ();
   const float left_ticks_per_cm = ticks_per_cm * FWD_TO_SIDEWAYS_CONVERSION;
@@ -197,7 +203,7 @@ void DriveUpOnRamp (float fwd_heading, float ticks_per_cm)
 
   // Loop behind us. Is there a robot there? If so: move over a bit more.
   if (ROBOT_BEHIND_US_THRESHOLD_CM > AftDistance ())
-    { DriveWithHeadingDistanceAndConversion (fwd_hedaing + 90.0,
+    { DriveWithHeadingDistanceAndConversion (fwd_heading + 90.0,
                                              DRIVE_LEFT_IF_BLOCKED_CM,
                                              left_ticks_per_cm);
       Stop ();
@@ -216,7 +222,7 @@ void DriveUpOnRamp (float fwd_heading, float ticks_per_cm)
 // to the last basket, dump the block there just to be sure.
 void IRBlockAndRamp ()
 { float fwd_heading = 0;
-  
+
   float ticks_per_cm = DriveToIROrFailsafe (fwd_heading);
   nxtDisplayTextLine(1, "t/cm: %f", ticks_per_cm);
   DumpBlock ();
