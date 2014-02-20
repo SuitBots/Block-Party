@@ -14,9 +14,9 @@
 // tMotor DriveMotors[] = { DriveFL, DriveFR, DriveBL, DriveBR };
 //
 
-#include "Sample Programs\NXT\3rd Party Sensor Drivers\drivers\hitechnic-irseeker-v2.h"
+//#include "hitechnic-irseeker-v2.h"
 #include "AdvancedSensors.c"
-#include "Sample Programs\NXT\3rd Party Sensor Drivers\drivers\lego-ultrasound.h"
+//#include "lego-ultrasound.h"
 //#include "typedefs.h"
 //#include "vector.h"
 
@@ -192,27 +192,4 @@ void somnirotate(int degrees, tMotor *DriveMotors) {
 			motor[DriveMotors[3]] = -encoderVal;
 		}
 	}
-}
-
-int IRSensorRegion (char sensorName, bool reversed) {  // include these commented lines when applied in the code
-	int _dirAC = 0;
-	//int acS1, acS2, acS3, acS4, acS5 = 0;
-	//int maxSig = 0;    // the max signal strength from the seeker.
-	//int val = 0;       // the translated directional value.
-
-	//tHTIRS2DSPMode _mode = DSP_1200;
-
-
-	// read the current modulated signal direction
-	_dirAC = HTIRS2readACDir(sensorName);
-	if (_dirAC < 0)
-	{
-		// error! - write to debug stream and then break.
-		writeDebugStreamLine("Read dir ERROR!");
-
-	}
-	if (reversed) {
-		_dirAC = _dirAC * -1 + 10;
-	}
-	return _dirAC;
 }
