@@ -14,7 +14,7 @@
 // tMotor DriveMotors[] = { DriveFL, DriveFR, DriveBL, DriveBR };
 //
 
-#include "hitechnic-gyro.h"
+//#include "hitechnic-gyro.h"
 
 
 void initializeRobot(tSensors gyro) {
@@ -159,14 +159,10 @@ void omni_drive(tMotor *DriveMotors) {
 
 
 void omni_drive_const(tMotor *DriveMotors, int constant) {
-
-	int crab = (J1Y1()*constant);
-	writeDebugStreamLine("joystickAngle: %i  ", crab);
-
 	motor[DriveMotors[0]] = J1Y1() + (J1X1()/2) + J1X2();
-	motor[DriveMotors[1]] = J1Y1() + (J1X1()/2) - J1X2() * 0.45;
+	motor[DriveMotors[1]] = J1Y1() + (J1X1()/2) - J1X2() * constant;
 	motor[DriveMotors[2]] = J1Y1() - (J1X1()/2) - J1X2();
-	motor[DriveMotors[3]] = J1Y1() - (J1X1()/2) + J1X2() * 0.45;
+	motor[DriveMotors[3]] = J1Y1() - (J1X1()/2) + J1X2() * constant;
 
 
 }

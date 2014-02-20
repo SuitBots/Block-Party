@@ -24,13 +24,14 @@
 #include "hitechnic-sensormux.h"
 #include "lego-ultrasound.h"
 #include "hitechnic-irseeker-v2.h"
+#include "lego-light.h"
 
 
 const tMotor DriveMotors[] = { DriveFL, DriveBL, DriveFR, DriveBR };  //an array that describes the Drive motors
 const int N_MOTORS = 4;
 
 const tMUXSensor FRONTUS = msensor_S4_1;
-//const tMUXSensor AFT_US = msensor_S4_2;
+const tMUXSensor AFT_US = msensor_S4_2;
 const tMUXSensor IR = msensor_S4_3;
 //const tMUXSensor Gyro = msensor_S4_4;
 
@@ -62,15 +63,17 @@ int FrontUSDistance(int degrees) {
 	return dist;
 }
 
-void Drive(int fl, int fr, int bl, int br) {
+int BackUSDistance() { return USreadDist(AFT_US); }
+
+void Drive(float fl, float fr, float br, float bl) {
 	motor[DriveFL] = fl;
-	motor[DriveFR] = fr*0.8;
-	motor[DriveBR] = br*0.8;
+	motor[DriveFR] = fr;
+	motor[DriveBR] = br;
 	motor[DriveBL] = bl;
 }
 
 void DriveForward (int speed) {
-	Drive (speed, speed, speed, speed);
+	Drive (speed, speed * 0.68, speed * 0.68, speed);
 }
 
 void DriveBackwards (int speed) {
@@ -80,28 +83,19 @@ void DriveBackwards (int speed) {
 void DriveLeft (int speed) {
 	// We're weighted oddly. In order to make the thing
 	// not crab, scale the rear wheels by this constant.
-	const float magic = .50;
-	Drive (-speed, speed, speed * magic, -speed * magic);
+	const float magic = .6;
+	Drive (-speed, speed, -speed * magic, speed * magic);
 }
 
 void DriveRight (int speed) {
 	// We're weighted oddly. In order to make the thing
 	// not crab, scale the rear wheels by this constant.
 	const float magic = .45;
-	Drive (speed, -speed * magic * 2.0, -speed * magic, speed * magic);
+	Drive (speed, -speed, speed * magic, -speed * magic);
 }
 
 void Stop () {
 	DriveForward (0);
-}
-
-void DriveForwardUntilTicksOrIR (const int ticks)
-{
-	while (EncoderTicks () < ticks &&	6 != IRSensorRegion ())
-	{	DriveForward (25);
-		wait10Msec (10);
-	}
-	Stop ();
 }
 
 void DriveForwardUntilTicks (const int ticks) {
@@ -120,9 +114,43 @@ void DriveBackwardsUntilTicks (const int ticks) {
 	Stop ();
 }
 
+void DriveFBCompensate(int ticks) {
+	while(EncoderTicks() > ticks) {
+		DriveBackwards(25);
+	}
+
+	while(EncoderTicks() < ticks) {
+		DriveForward(25);
+	}
+	Stop();
+}
+
 void DriveLeftUntilTicks (const int ticks) {
 	while (EncoderTicks () < ticks) {
 		DriveLeft (100);
+		wait10Msec (10);
+	}
+	Stop ();
+}
+
+void DriveRightUntilTicks (const int ticks) {
+	while (EncoderTicks () < ticks) {
+		DriveRight (100);
+		wait10Msec (10);
+	}
+	Stop ();
+}
+
+void DriveDiagonalUntilTicks(const int ticks) {
+	while(EncoderTicks() < ticks) {
+		Drive(0,100,0,73);
+	}
+}
+
+void DriveForwardUntilTicksOrIR (const int ticks)
+{
+	while (EncoderTicks () < ticks &&	5 != IRSensorRegion ())
+	{	DriveForward (25);
 		wait10Msec (10);
 	}
 	Stop ();
@@ -137,10 +165,11 @@ void DriveForwardUntilTicksOrFrontUS(int ticks, int front) {
 }
 
 void DriveLeftUntilTicksOrColor(int ticks) {
-	while(EncoderTicks() < ticks && ReturnLightVal() < 35) {
+	LSsetActive(LEGOLIGHT);
+	while(EncoderTicks() < ticks && ReturnLightVal() < 40) {
 		DriveLeft(100);
 	}
-	if(ReturnLightVal() < 35) {
+	if(ReturnLightVal() > 40) {
 		PlaySound(soundFastUpwardTones);
 	}
 	Stop();
@@ -181,57 +210,81 @@ void initializeRobot() {
 const int TICKS_PER_M = 16000;
 
 void do_main()
-{ // Dump ();
-
+{
 	ZeroEncoders ();
 
-	int fwd_ticks = 1.7 * TICKS_PER_M;
-	int final_fwd_ticks = 1.95 * TICKS_PER_M;
-	int left_ticks = 1.5 * TICKS_PER_M;
-	int back_ticks = 1.0 * TICKS_PER_M;
+	float bin1_ticks = 0.53 * TICKS_PER_M;
+	float bin2_ticks = 0.83 * TICKS_PER_M;
+	float bin3_ticks = 1.40 * TICKS_PER_M;
+	float bin4_ticks = 1.72 * TICKS_PER_M;
+	float tolerance = 0.15 * TICKS_PER_M;
 
-	DriveForwardUntilTicksOrIR (fwd_ticks);
+	float final_fwd_ticks = 1.72 * TICKS_PER_M;
 
-	if(EncoderTicks() < 0.9 * TICKS_PER_M) {
-		wait1Msec(100);
-		DriveForwardUntilTicks(0.5 * TICKS_PER_M);
+	float diagonal_ticks = 0.50 * TICKS_PER_M;
+
+	float left_ticks = 0.85 * TICKS_PER_M;
+	float back_ticks = 1.25 * TICKS_PER_M;
+
+	//Drive forwards until IR beacon or encoder limit
+	DriveForwardUntilTicksOrIR (bin4_ticks);
+
+	//If IR is first bin, compensate, dump
+	if(EncoderTicks() > bin1_ticks - tolerance && EncoderTicks() < bin1_ticks + tolerance) {
+		DriveFBCompensate(bin1_ticks);
 		DumpCR ();
 	}
 
-	else if(EncoderTicks() > 0.9 * TICKS_PER_M) {
-		DriveForwardUntilTicksOrIR(fwd_ticks);
+	//If IR is second bin, compensate, dump
+	else if(EncoderTicks() > bin2_ticks - tolerance && EncoderTicks() < bin2_ticks + tolerance) {
+		DriveFBCompensate(bin2_ticks);
 		DumpCR();
 	}
 
-	DriveForwardUntilTicks(fwd_ticks);
-	DriveForwardUntilTicksOrFrontUS(final_fwd_ticks, 33);
-	ZeroEncoders ();
-	wait1Msec(500);
-	DriveLeftUntilTicks(0.2 * TICKS_PER_M);
+	//If IR is third bin, compensate, dump
+	else if(EncoderTicks() > bin3_ticks - tolerance && EncoderTicks() < bin3_ticks + tolerance) {
+		DriveFBCompensate(bin3_ticks);
+		DumpCR();
+	}
+
+	//If IR is fourth bin or encoder limit, comensate, dump
+	else if(EncoderTicks() > bin4_ticks - tolerance && EncoderTicks() < bin4_ticks + tolerance) {
+		DriveFBCompensate(bin4_ticks);
+		DumpCR();
+	}
+
+	//OLD RAMP ISHT
+	//Drive forwards to endpoint or front US sensor distance
+	DriveForwardUntilTicksOrFrontUS(final_fwd_ticks, 29);
+
 	ZeroEncoders();
-	wait1Msec(500);
-	DriveForwardUntilTicksOrFrontUS(0.2 * TICKS_PER_M, 29);
+	DriveDiagonalUntilTicks(diagonal_ticks);
+	wait1Msec(100);
+	Drive(100,0,0,100);
+	wait1Msec(125);
+	Stop();
+
 	ZeroEncoders();
-	wait1Msec(500);
-	DriveLeftUntilTicksOrColor(left_ticks);
+	DriveLeftUntilTicks(left_ticks);
+
+	ZeroEncoders();
+	DriveBackwardsUntilTicks(back_ticks);
+
+	//ZeroEncoders ();
+	//DriveLeftUntilTicks(0.3 * TICKS_PER_M);
+	//while(EncoderTicks() < 0.5913 * TICKS_PER_M && BackUSDistance() == 255) {
+	//	writeDebugStreamLine("Dist: %i", EncoderTicks());
+	//	DriveLeft(100);
+	//}
+	//Stop();
+
+	//int distance = TICKS_PER_M / (EncoderTicks() * 0.73025);
+
+	/*
 	ZeroEncoders ( );
 	wait1Msec(500);
 	DriveBackwardsUntilTicks (back_ticks);
-
-	wait10Msec(100);
-}
-
-void do_left_test () {
-	ZeroEncoders ();
-	DriveLeftUntilTicks (TICKS_PER_M);
-}
-
-void do_fwd_test () {
-	ZeroEncoders ();
-	DriveForwardUntilTicks (TICKS_PER_M);
-	wait10Msec (100);
-	ZeroEncoders ();
-	DriveBackwardsUntilTicks (TICKS_PER_M);
+	*/
 }
 
 task main () {
