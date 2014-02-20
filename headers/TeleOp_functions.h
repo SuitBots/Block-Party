@@ -76,6 +76,16 @@ void operate_Lift(tMotor Lift) {
 	}
 }
 
+void operate_EG(tMotor EG) {
+	if (abs(J2Y2()) > 0) {
+		motor[EG] = J2Y2();
+		wait1Msec(1);
+	}
+	else {
+		motor[EG] = 0;
+	}
+}
+
 void operate_Spinny(TServoIndex spinny) {
 
 	if (joy2Btn(6)) {
@@ -99,6 +109,13 @@ void omni_drive(tMotor *DriveMotors) {
 	motor[DriveMotors[1]] = J1Y1() + (J1X1()/2) - (0.6 * J1X2());
 	motor[DriveMotors[2]] = J1Y1() - (J1X1()/2) - J1X2();
 	motor[DriveMotors[3]] = J1Y1() - (J1X1()/2) + (0.6 * J1X2());
+}
+
+void omni_drive_const(tMotor *DriveMotors, float constant) {
+	motor[DriveMotors[0]] = J1Y1() + (J1X1()/2) + J1X2();
+	motor[DriveMotors[1]] = J1Y1() + (J1X1()/2) - J1X2() * constant;
+	motor[DriveMotors[2]] = J1Y1() - (J1X1()/2) - J1X2();
+	motor[DriveMotors[3]] = J1Y1() - (J1X1()/2) + J1X2() * constant;
 }
 
 static float compassBearing(long time, tSensors gyro) {
